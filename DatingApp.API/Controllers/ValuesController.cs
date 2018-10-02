@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DatingApp.API.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DatingApp.API.Controllers
 {
-    // http://localhost:5000/api/Values
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
+    // Note: ControllerBase does NOT Have View support
+    // (the Controller class has this)
     public class ValuesController : ControllerBase
     {
         // inject DataContext in signatore
@@ -31,6 +34,7 @@ namespace DatingApp.API.Controllers
         }
 
         // GET api/values/5
+        [AllowAnonymous]
         [HttpGet("{id}")]
         //public ActionResult<string> Get(int id)
         public async Task<IActionResult> GetValue(int id)
