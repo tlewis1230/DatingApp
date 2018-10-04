@@ -43,7 +43,8 @@ namespace DatingApp.API.Controllers
         }
         [HttpPost("Login")]
         public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
-        {
+        {         
+
             // check to make sure we have a user and its password is what we have stored in the db
             var userFromRepo = await _repo.Login(userForLoginDto.Username.ToLower(), userForLoginDto.Password);
 
@@ -71,9 +72,9 @@ namespace DatingApp.API.Controllers
             // with signing credentials
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                 Subject = new ClaimsIdentity(claims),   
-                 Expires = DateTime.Now.AddDays(1),
-                 SigningCredentials = creds
+                Subject = new ClaimsIdentity(claims),   
+                Expires = DateTime.Now.AddDays(1),
+                SigningCredentials = creds
             };
 
             // created JWT security token handler - will allow us to create the token based on the tokenDescriptor
@@ -85,7 +86,7 @@ namespace DatingApp.API.Controllers
             return Ok(new {
 
                 token = tokenHandler.WriteToken(token)
-            });
+            });           
         }
     }
 }
