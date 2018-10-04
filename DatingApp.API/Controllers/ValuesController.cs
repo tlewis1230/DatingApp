@@ -24,8 +24,8 @@ namespace DatingApp.API.Controllers
 
         }
         // GET api/values
+        [AllowAnonymous]
         [HttpGet]
-        //public ActionResult<IEnumerable<string>> Get()
         public async Task<IActionResult> GetValues()
         {
             // values is our DBSet reference
