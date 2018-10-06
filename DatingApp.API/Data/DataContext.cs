@@ -10,5 +10,6 @@ namespace DatingApp.API.Data
         //plularize name of Entities
         public DbSet<Value> Values { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Photo> Photos { get; set; }
     }
 }
