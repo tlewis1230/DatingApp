@@ -9,6 +9,7 @@ namespace DatingApp.API.Models
         public string Description { get; set; }
         public DateTime DateAdded { get; set; }
         public Boolean IsMain { get; set; }
+        public string PublicId { get; set; }
 
         // creates cascade delete in photo table if we delete a user
         public User User { get; set; }

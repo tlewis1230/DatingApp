@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
 using DatingApp.API.Data;
 using DatingApp.API.DTOs;
 using DatingApp.API.Models;
@@ -18,9 +19,12 @@ namespace DatingApp.API.Controllers
     {
         private readonly IAuthRepository _repo;
         private readonly IConfiguration _config;
-        public AuthController(IAuthRepository repo, IConfiguration config)
+        private readonly IMapper _mapper;
+
+        public AuthController(IAuthRepository repo, IConfiguration config, IMapper mapper)
         {
             _config = config;
+            _mapper = mapper;
             _repo = repo;
 
         }
@@ -43,11 +47,9 @@ namespace DatingApp.API.Controllers
         }
         [HttpPost("Login")]
         public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
-        {         
-
+        {        
             // check to make sure we have a user and its password is what we have stored in the db
             var userFromRepo = await _repo.Login(userForLoginDto.Username.ToLower(), userForLoginDto.Password);
-
 
             if (userFromRepo == null)
                 // return general "Unauthorized" error - don't want error message to be too helpful
@@ -82,10 +84,15 @@ namespace DatingApp.API.Controllers
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
+            // <MappingTo>(MappingFrom)
+            var user =_mapper.Map<UserForListDto>(userFromRepo);
+
             // write token into response
             return Ok(new {
 
-                token = tokenHandler.WriteToken(token)
+                token = tokenHandler.WriteToken(token),
+                user
+
             });           
         }
     }
