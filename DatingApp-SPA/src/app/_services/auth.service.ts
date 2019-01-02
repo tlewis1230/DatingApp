@@ -42,8 +42,8 @@ login(model: any) {
   }
   // model is an object that has the username and password
   // return an Observable (we'll need to subscribe to it in our component)
-  register(model: any) {
-      return this.http.post(this.baseUrl + 'register', model);
+  register(user: User) {
+      return this.http.post(this.baseUrl + 'register', user);
   }
 
   loggedIn() {
