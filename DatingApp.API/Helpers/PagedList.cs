@@ -24,7 +24,6 @@ namespace DatingApp.API.Helpers
         // can define parts of our query agianst our db with multiple steps & deferred execution
         public static async Task<PagedList<T>> CreateAsync(IQueryable <T> source, int pageNumber, int pageSize)
         {
-
             var count = await source.CountAsync();
             var items = await source.Skip((pageNumber -1) * pageSize).Take(pageSize).ToListAsync();
             return new PagedList<T>(items,count,pageNumber,pageSize);

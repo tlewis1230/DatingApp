@@ -8,15 +8,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DatingApp.API.Controllers
-{
-    [Authorize]
+{   
     [Route("api/[controller]")]
     [ApiController]
     // Note: ControllerBase does NOT Have View support
     // (the Controller class has this)
     public class ValuesController : ControllerBase
     {
-        // inject DataContext in signatore
+        // inject DataContext in signature
         private readonly DataContext _context;
         public ValuesController(DataContext context)
         {
@@ -24,7 +23,7 @@ namespace DatingApp.API.Controllers
 
         }
         // GET api/values
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetValues()
         {
@@ -34,7 +33,7 @@ namespace DatingApp.API.Controllers
         }
 
         // GET api/values/5
-        [AllowAnonymous]
+        [Authorize(Roles = "Member")]
         [HttpGet("{id}")]
         //public ActionResult<string> Get(int id)
         public async Task<IActionResult> GetValue(int id)

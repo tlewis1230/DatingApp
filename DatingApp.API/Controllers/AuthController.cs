@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -7,65 +8,96 @@ using AutoMapper;
 using DatingApp.API.Data;
 using DatingApp.API.DTOs;
 using DatingApp.API.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DatingApp.API.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
-    {
-        private readonly IAuthRepository _repo;
+    {        
         private readonly IConfiguration _config;
         private readonly IMapper _mapper;
-
-        public AuthController(IAuthRepository repo, IConfiguration config, IMapper mapper)
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
+        public AuthController(IConfiguration config,
+            IMapper mapper,
+            UserManager<User> userManager,
+            SignInManager<User> signInManager)
         {
+            _userManager = userManager;
+            _signInManager = signInManager;
             _config = config;
             _mapper = mapper;
-            _repo = repo;
-
         }
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserForRegisterDto userForRegisterDto)
-        {
-            userForRegisterDto.Username = userForRegisterDto.Username.ToLower();
-            if (await _repo.UserExists(userForRegisterDto.Username))
-                return BadRequest("Username already exists");
-
-            // var userToCreate = new User
-            // {
-            //     Username = userForRegisterDto.Username
-            // }
-            
+        {           
             //<Destination>(source)
             var userToCreate = _mapper.Map<User>(userForRegisterDto);
-            var createdUser = await _repo.Register(userToCreate, userForRegisterDto.Password);
-            var userToReturn = _mapper.Map<UserForDetailedDto>(createdUser);
+
+            var result = await  _userManager.CreateAsync(userToCreate, userForRegisterDto.Password);
+            
+            var userToReturn = _mapper.Map<UserForDetailedDto>(userToCreate);
+
+            if (result.Succeeded)
+            {
+                return CreatedAtRoute("GetUser", 
+                    new { Controller = "Users", id = userToCreate.Id }, userToReturn);
+            }
+            
+            return BadRequest(result.Errors);
             // RouteName, Action, obj route values, return value
-            return CreatedAtRoute("GetUser",new {Controller = "Users", id = createdUser.Id}, userToReturn);
+           
             //return StatusCode(201);
         }
-        [HttpPost("Login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
-        {        
-            // check to make sure we have a user and its password is what we have stored in the db
-            var userFromRepo = await _repo.Login(userForLoginDto.Username.ToLower(), userForLoginDto.Password);
+        {
+            var user = await _userManager.FindByNameAsync(userForLoginDto.Username);
+            var result = await _signInManager
+                .CheckPasswordSignInAsync(user, userForLoginDto.Password, false);
 
-            if (userFromRepo == null)
-                // return general "Unauthorized" error - don't want error message to be too helpful
-                return Unauthorized();
+            if (result.Succeeded)
+            {
+                var appUser = await _userManager.Users.Include(p => p.Photos)
+                    .FirstOrDefaultAsync(u => u.NormalizedUserName == userForLoginDto.Username.ToUpper());
 
+                 // <MappingTo>(MappingFrom)
+                var userToReturn = _mapper.Map<UserForListDto>(appUser);
+
+                // write token into response
+                return Ok(new
+                {
+                    token = GenerateJwtToken(appUser).Result,
+                    user = userToReturn
+                });
+            }           
+            return Unauthorized();          
+        }
+        private async Task<string> GenerateJwtToken(User user)
+        {
             // Build up token:
             // token will have TWO claims:
             // userid & user's username
-            var claims = new[]
+            var claims = new List<Claim>
             {
-                new Claim (ClaimTypes.NameIdentifier, userFromRepo.Id.ToString()),
-                new Claim (ClaimTypes.Name, userFromRepo.Username)
+                new Claim (ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim (ClaimTypes.Name, user.UserName)
             };
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            foreach(var role in roles) 
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             // server needs to sign the token - creating a security key and then using the key as part of the signing credentials and encrypting the key as part of the hashing algorithm
             var key = new SymmetricSecurityKey(Encoding.UTF8
@@ -77,7 +109,7 @@ namespace DatingApp.API.Controllers
             // with signing credentials
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(claims),   
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddDays(1),
                 SigningCredentials = creds
             };
@@ -87,16 +119,7 @@ namespace DatingApp.API.Controllers
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            // <MappingTo>(MappingFrom)
-            var user =_mapper.Map<UserForListDto>(userFromRepo);
-
-            // write token into response
-            return Ok(new {
-
-                token = tokenHandler.WriteToken(token),
-                user
-
-            });           
+            return tokenHandler.WriteToken(token);
         }
     }
 }

@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 
 namespace DatingApp.API.Controllers
 {
-    [Authorize]
+   //[Authorize]
     // no methods in the class will be available to anonymous users
     [Route("api/users/{userId}/photos")]
     [ApiController]
@@ -65,7 +65,7 @@ namespace DatingApp.API.Controllers
             if (userId != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value))
                 return Unauthorized();
 
-            var userFromRepo = await _repo.GetUser(userId);
+            var userFromRepo = await _repo.GetUser(userId,true);
 
             var file = photoForCreationDto.File;
             var uploadResult = new ImageUploadResult();
@@ -117,7 +117,7 @@ namespace DatingApp.API.Controllers
                 return Unauthorized();
 
             // check that the id of the photo belongs to the user
-            var user = await _repo.GetUser(userId);
+            var user = await _repo.GetUser(userId,true);
             // check that the photo exists in the user's photo collection
             if (!user.Photos.Any(p => p.Id == id))            
                 return Unauthorized();
@@ -149,7 +149,7 @@ namespace DatingApp.API.Controllers
                 return Unauthorized();
 
             // check that the id of the photo belongs to the user
-            var user = await _repo.GetUser(userId);
+            var user = await _repo.GetUser(userId, true);
             // check that the photo exists in the user's photo collection
             if (!user.Photos.Any(p => p.Id == id))            
                 return Unauthorized();

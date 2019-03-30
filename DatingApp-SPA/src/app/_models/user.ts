@@ -3,7 +3,7 @@ import { Photo } from './photo';
 // replicate what we are returning for our user
 export interface User {
     id: number;
-    username: string;
+    userName: string;
     knownAs: string;
     age: number;
     gender: string;
@@ -18,4 +18,5 @@ export interface User {
     introduction?: string;
     lookingFor?: string;
     photos?: Photo[];
+    roles?: string[];
 }
